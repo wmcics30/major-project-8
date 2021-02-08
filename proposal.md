@@ -1,25 +1,19 @@
 # Proposal
-I would like to make a game where you can draw something out and be able to "raise" it like a pet. Players would be able to get in-game currencies from the pet gifting some to you at certain intervals and the in-game currency will also eventually be able to be gained from mini-games.
+I would like to build off of my tic tac toe game (the bunny game). I would like to build it so that the tic tac toe game is not the only thing that is available to do (so the board should not take up the entire screen). I'd like to add a scoring system where the more you win, the more you get in-game currency to buy stuff from the shop, and the player can choose which team to side with. I'd like to add more mini-games like bunnies trying to catch carrots from the sky.
+I would also like to add a player character that the player can name and purchase cosmetics from the shop with in-game currency. 
 
 ## Needs to Have
-- At least one mini-game
-- Create classes (for mini-games or for the pet itself)
-- Player input (text for pet name and drawing for the pet appearance)
-- Currency variables
-- In-game shop to use currency on
-- Bars for the pet's state (ex. hunger, thirst, etc)
-- Player interaction with pet
-- Basic sound effects + music, and basic UI
+- Tic-tac-toe game
+- Classes (carrots falling from the sky)
+- Scoring system
+- Currency + shop
+- Player text input
 
 ## Nice to Have
-- Pet can occasionally try to interact with the player (random speech bubbles?)
-- Save files
-- Multiple pets
+- Introductory storyline
 - More mini-games
-- Animations
-- Random/surprise events
-- Pet likes/dislikes
-- Make it mobile-friendly?
-
+- A lobby of sorts where the player can run around with their character
+- NPCs that the player can interact with
+- Savefiles
 
 
