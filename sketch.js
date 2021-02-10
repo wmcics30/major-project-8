@@ -27,7 +27,7 @@ let blanks; //to count how many tiles are empty (for a draw situation)
 
 let bgMusic, playerClick, otherClick;
 
-let gameMode = "start"; 
+let gameState = "start"; 
 
 //general
 
@@ -59,7 +59,7 @@ function preload() {
 }
 
 function displayStart() {
-  if (gameMode === "start") {
+  if (gameState === "start") {
     image(startMenuImg, 0, 0, width, height);
     image(bunVsComp, optionButtonX, pvcompButtonY, optionButtonWidth, optionButtonHeight);
     image(bunVsBun, optionButtonX, pvpButtonY, optionButtonWidth, optionButtonHeight);
@@ -67,7 +67,7 @@ function displayStart() {
 }
 
 function displayPlayAgain() {
-  if (gameMode !== "start" && gameEnd()) {
+  if (gameState !== "start" && gameEnd()) {
     image(playAgainButton, playButtonX, playButtonY, playButtonWidth, playButtonHeight);
   }
 }
@@ -118,14 +118,14 @@ function setup() {
 //INTERACTIVE CONTROLS
 
 function mousePressed() {
-  if (gameMode === "start") {
+  if (gameState === "start") {
     //pvp button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvpButtonY && mouseY < pvpButtonY + optionButtonHeight) {
-      gameMode = "pvp";
+      gameState = "pvp";
     }
     //player vs computer button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvcompButtonY && mouseY < pvcompButtonY + optionButtonHeight) {
-      gameMode = "comp";
+      gameState = "comp";
     }
     yourTurn = true;
   }
@@ -137,7 +137,7 @@ function mousePressed() {
     }
   }
   //placing tokens
-  else if (gameMode !== "start" && noBlanks() === false) {
+  else if (gameState !== "start" && noBlanks() === false) {
     let x = Math.floor(mouseX / cellSize);
     let y = Math.floor(mouseY / cellSize);
     
@@ -150,7 +150,7 @@ function mousePressed() {
       blanks--;
       
     }
-    if (gameMode === "pvp" && !yourTurn && grid[y][x] === 0) {
+    if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) {
       otherClick.play();
       
       grid[y][x] = 1;
@@ -193,9 +193,9 @@ function displayBoard() {
 
 //FUNCTIONS CONTROLLING COMPUTER PLAYER
 function computerTurn() {
-  //if gamemode is player vs computer, if it is not the player's turn, and it is not at the end of the game,
+  //if gameState is player vs computer, if it is not the player's turn, and it is not at the end of the game,
   //computer takes its turn after 2 seconds.
-  if (gameMode === "comp" && yourTurn === false && !gameEnd() && millis() - lastSwitchTime > waitTime) {
+  if (gameState === "comp" && yourTurn === false && !gameEnd() && millis() - lastSwitchTime > waitTime) {
     randomX = int(random(3));
     randomY = int(random(3));
 
