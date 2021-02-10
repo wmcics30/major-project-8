@@ -7,6 +7,8 @@
 
 
 //GLOBAL VARIABLES
+
+//tic tac toe
 let grid;
 let rows, cols, cellSize;
 let ghostImg, snowImg;
@@ -25,7 +27,12 @@ let blanks; //to count how many tiles are empty (for a draw situation)
 
 let bgMusic, playerClick, otherClick;
 
-let gameMode = "start"; //pvp or player vs comp
+let gameMode = "start"; 
+
+//general
+
+let wallet = 0; //player is poor :(
+
 
 //PRELOAD + SETUP
 function preload() {
