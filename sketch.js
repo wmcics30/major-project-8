@@ -4,9 +4,18 @@
 //
 // Extra:
 
+//NOTE TO SELF: 
+//    NEXT STEPS:
+//        - Fix audio !!!
+//        - Closet Icon + Entrance to closet
+//        - Carrot Gameplay
+//        - Scoring system
+//        - MORE (Check agenda)
 
 
 //GLOBAL VARIABLES
+
+let gameState = "start"; 
 
 //tic tac toe
 let grid;
@@ -27,11 +36,25 @@ let blanks; //to count how many tiles are empty (for a draw situation)
 
 let bgMusic, playerClick, otherClick;
 
-let gameState = "start"; 
 
 //general
+let mainMenuImg;
+let lobbyImg, closetIcon;
+
+let backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight;
+
+let startButtonImg, startButtonX, startButtonY, startButtonWidth, startButtonHeight;
+let ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToeIconHeight;
+let carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight;
+let shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight;
 
 let wallet = 0; //player is poor :(
+
+//shop
+let shopBgImg, shopMenuImg;
+
+//carrot game
+let carrotGameBgImg;
 
 
 //PRELOAD + SETUP
@@ -56,18 +79,84 @@ function preload() {
   bunVsBun = loadImage("assets/pvp.png");
   playAgainButton = loadImage("assets/playAgain.png");
 
+  startButtonImg = loadImage("assets/start-button.png");
+  backButtonImg = loadImage("assets/back-button.png");
+  
+  ticTacToeIcon = loadImage("assets/tic-tac-toe-button.png");
+  carrotGameIcon = loadImage("assets/carrot-game-button.png");
+  shopIcon = loadImage("assets/shop-button.png");
+  closetIcon = loadImage("assets/customize-button.png");
+
+  //background images preload
+  mainMenuImg = loadImage("assets/start-menu.png");
+  lobbyImg = loadImage("assets/lobby-bg.png");
+
+  //shop
+  shopBgImg = loadImage("assets/shop-bg.png");
+  shopMenuImg = loadImage("assets/shop-menu.png");
+
+  //carrot game
+  carrotGameBgImg = loadImage("assets/carrot-game-bg.png");
+
+
+}
+
+function displayMainStart() {
+  if (gameState === "start") {
+    image(mainMenuImg, 0, 0, width, height);
+    image(startButtonImg, startButtonX, startButtonY, startButtonWidth, startButtonHeight);
+  }
+}
+
+function displayLobby() {
+  if (gameState === "lobby") {
+    //reset tic tac toe game
+    setup();
+
+    //lobby bg
+    image(lobbyImg, 0, 0, width, height);
+
+    //icons in the lobby:
+    image(ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToeIconHeight);
+    image(carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight);
+    image(shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight);
+        //closet icon
+
+  }
+}
+
+function displayCarrotGameBg() {
+  if (gameState === "carrot game") {
+    image(carrotGameBgImg, 0, 0, width, height);
+  }
 }
 
 function displayStart() {
-  if (gameState === "start") {
+  if (gameState === "startTicTacToe") {
     image(startMenuImg, 0, 0, width, height);
     image(bunVsComp, optionButtonX, pvcompButtonY, optionButtonWidth, optionButtonHeight);
     image(bunVsBun, optionButtonX, pvpButtonY, optionButtonWidth, optionButtonHeight);
   }
 }
 
+function shouldBackButtonClick() {
+  return gameState === "startTicTacToe" || gameState === "comp" || gameState === "pvp" || gameState === "carrot game" || gameState === "shop";
+}
+
+function displayBackButton() {
+  if (shouldBackButtonClick()) {
+    image(backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight);
+  }
+}
+
+function displayShop() {
+  if (gameState === "shop") {
+    image(shopBgImg, 0, 0, width, height);
+  }
+}
+
 function displayPlayAgain() {
-  if (gameState !== "start" && gameEnd()) {
+  if (gameState !== "startTicTacToe" && gameEnd()) {
     image(playAgainButton, playButtonX, playButtonY, playButtonWidth, playButtonHeight);
   }
 }
@@ -108,6 +197,32 @@ function setup() {
   playButtonHeight = playAgainButton.height * 0.5;
   playButtonX = width/2 - playButtonWidth/2;
   playButtonY = height * 0.7;
+
+  startButtonWidth = startButtonImg.width * 0.35;
+  startButtonHeight = startButtonImg.height * 0.35;
+  startButtonX = width/2 - startButtonWidth/2;
+  startButtonY = height * 0.75;
+
+  backButtonImgWidth = backButtonImg.width * 0.4;
+  backButtonImgHeight = backButtonImg.height * 0.4;
+  backButtonImgX = width * 0.05;
+  backButtonImgY = height * 0.9;
+
+  ticTacToeIconWidth = ticTacToeIcon.width * 0.3;
+  ticTacToeIconHeight = ticTacToeIcon.height *0.3;
+  ticTacToeIconX = width * 0.85;
+  ticTacToeIconY = height * 0.25;
+
+  carrotGameIconWidth = ticTacToeIconWidth; //the icons in the right side of the lobby have same size
+  carrotGameIconHeight = ticTacToeIconHeight;
+  carrotGameIconX = ticTacToeIconX;
+  carrotGameIconY = ticTacToeIconY + ticTacToeIconHeight + 40;
+
+  shopIconWidth = ticTacToeIconWidth;
+  shopIconHeight = ticTacToeIconHeight;
+  shopIconX = ticTacToeIconX;
+  shopIconY = carrotGameIconY + carrotGameIconHeight + 40;
+
   
   victoryScreen = false;
   yourTurn = true;
@@ -115,19 +230,61 @@ function setup() {
   blanks = 9;
 }
 
+function checkBackButton() {
+  if (shouldBackButtonClick()) {
+    if (mouseX > backButtonImgX && mouseX < backButtonImgX + backButtonImgWidth && mouseY > backButtonImgY && mouseY < backButtonImgY + backButtonImgHeight) {
+      gameState = "lobby";
+    }
+  }
+}
+
 //INTERACTIVE CONTROLS
 
 function mousePressed() {
   if (gameState === "start") {
+    if (mouseX > startButtonX && mouseX < startButtonX + startButtonWidth && mouseY > startButtonY && mouseY < startButtonY + startButtonHeight) {
+      gameState = "lobby";
+    }
+  }
+  //icons in the lobby
+  else if (gameState === "lobby") {
+    //tic tac toe
+    if (mouseX > ticTacToeIconX && mouseX < ticTacToeIconX + ticTacToeIconWidth && mouseY > ticTacToeIconY && mouseY < ticTacToeIconY + ticTacToeIconHeight) {
+      gameState = "startTicTacToe";
+    }
+    //carrot game
+    if (mouseX > carrotGameIconX && mouseX < carrotGameIconX + carrotGameIconWidth && mouseY > carrotGameIconY && mouseY < carrotGameIconY + carrotGameIconHeight) {
+      gameState = "carrot game";
+    }
+    //shop
+    if (mouseX > shopIconX && mouseX < shopIconX + shopIconWidth && mouseY > shopIconY && mouseY < shopIconY + shopIconHeight) {
+      gameState = "shop";
+    }
+  }
+
+  //shop
+  else if (gameState === "shop") {
+    checkBackButton();
+  }
+
+  //carrot game
+  else if (gameState === "carrot game") {
+    checkBackButton();
+  }
+
+  //tic tac toe start menu
+  else if (gameState === "startTicTacToe") {
     //pvp button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvpButtonY && mouseY < pvpButtonY + optionButtonHeight) {
       gameState = "pvp";
+      yourTurn = true;
     }
     //player vs computer button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvcompButtonY && mouseY < pvcompButtonY + optionButtonHeight) {
       gameState = "comp";
+      yourTurn = true;
     }
-    yourTurn = true;
+    checkBackButton();
   }
   
   //play again button
@@ -135,9 +292,14 @@ function mousePressed() {
     if (mouseX > playButtonX && mouseX < playButtonX + playButtonWidth && mouseY > playButtonY && mouseY < playButtonY + playButtonHeight) {
       setup();
     }
+    checkBackButton();
   }
+
   //placing tokens
-  else if (gameState !== "start" && noBlanks() === false) {
+  else if (gameState !== "startTicTacToe" && noBlanks() === false) {
+
+    checkBackButton();
+
     let x = Math.floor(mouseX / cellSize);
     let y = Math.floor(mouseY / cellSize);
     
@@ -175,17 +337,19 @@ function createEmptyBoard() {
 }
 
 function displayBoard() {
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (grid[y][x] === 0) {
-        fill("white");
-        rect(x*cellSize, y*cellSize, cellSize, cellSize); //blank space
-      }
-      else if (grid[y][x] === 1) {
-        image(ghostImg, x*cellSize, y*cellSize, cellSize, cellSize); //X
-      }
-      else if (grid[y][x] === 2) {
-        image(snowImg, x*cellSize, y*cellSize, cellSize, cellSize); //O
+  if (gameState === "comp" || gameState === "pvp") {
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (grid[y][x] === 0) {
+          fill("white");
+          rect(x*cellSize, y*cellSize, cellSize, cellSize); //blank space
+        }
+        else if (grid[y][x] === 1) {
+          image(ghostImg, x*cellSize, y*cellSize, cellSize, cellSize); //X
+        }
+        else if (grid[y][x] === 2) {
+          image(snowImg, x*cellSize, y*cellSize, cellSize, cellSize); //O
+        }
       }
     }
   }
@@ -393,7 +557,6 @@ function computerTurn() {
   }
 }
 
-
 //VICTORY CONDITIONS
 function winCheck(oOrX, whoseVictory) {
   
@@ -470,4 +633,11 @@ function draw() {
   displayVictoryScreen();
   displayPlayAgain();
   displayStart();
+
+  displayMainStart();
+  displayLobby();
+  displayCarrotGameBg();
+  displayShop();
+
+  displayBackButton();
 }
