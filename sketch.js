@@ -6,7 +6,7 @@
 
 //NOTE TO SELF: 
 //    NEXT STEPS:
-//        - Fix audio !!!
+//        - Fix audio !!! or Fix setup() call when pressing back from tic tac toe
 //        - Closet Icon + Entrance to closet
 //        - Carrot Gameplay
 //        - Scoring system
@@ -54,7 +54,28 @@ let wallet = 0; //player is poor :(
 let shopBgImg, shopMenuImg;
 
 //carrot game
-let carrotGameBgImg;
+let carrotGameBgImg, carrotImg;
+
+class Carrot {
+  constructor() {
+    this.x = random(width);
+    this.y = 0;
+    this.dx = 0;
+    this.dy = random(5, 10);
+    this.notCaught = true;
+    
+  }
+
+  move() {
+    this.y += this.dy;
+  }
+
+  display() {
+    if (this.notCaught) {
+      image(carrotImg, this.x, this.y, 15, 15);
+    }
+  }
+}
 
 
 //PRELOAD + SETUP
@@ -97,6 +118,7 @@ function preload() {
 
   //carrot game
   carrotGameBgImg = loadImage("assets/carrot-game-bg.png");
+  carrotImg = loadImage("assets/good-carrot.png");
 
 
 }
@@ -110,8 +132,6 @@ function displayMainStart() {
 
 function displayLobby() {
   if (gameState === "lobby") {
-    //reset tic tac toe game
-    setup();
 
     //lobby bg
     image(lobbyImg, 0, 0, width, height);
@@ -234,6 +254,7 @@ function checkBackButton() {
   if (shouldBackButtonClick()) {
     if (mouseX > backButtonImgX && mouseX < backButtonImgX + backButtonImgWidth && mouseY > backButtonImgY && mouseY < backButtonImgY + backButtonImgHeight) {
       gameState = "lobby";
+      setup();
     }
   }
 }
@@ -274,6 +295,7 @@ function mousePressed() {
 
   //tic tac toe start menu
   else if (gameState === "startTicTacToe") {
+    checkBackButton();
     //pvp button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvpButtonY && mouseY < pvpButtonY + optionButtonHeight) {
       gameState = "pvp";
@@ -284,7 +306,6 @@ function mousePressed() {
       gameState = "comp";
       yourTurn = true;
     }
-    checkBackButton();
   }
   
   //play again button
@@ -302,7 +323,7 @@ function mousePressed() {
 
     let x = Math.floor(mouseX / cellSize);
     let y = Math.floor(mouseY / cellSize);
-    
+  
     if (yourTurn && grid[y][x] === 0) { //o
       playerClick.play();
       
