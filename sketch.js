@@ -6,9 +6,8 @@
 
 //NOTE TO SELF: 
 //    NEXT STEPS:
-//        - Fix audio !!! or Fix setup() call when pressing back from tic tac toe
+//        - Fix audio !!! How to not start over music when calling back setup()
 //        - Closet Icon + Entrance to closet
-//        - Carrot Gameplay
 //        - Scoring system
 //        - MORE (Check agenda)
 
@@ -48,37 +47,93 @@ let ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToe
 let carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight;
 let shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight;
 
+let playerImg, playerX, playerY, playerWidth, playerHeight;
+
 let wallet = 0; //player is poor :(
 
 //shop
 let shopBgImg, shopMenuImg;
 
 //carrot game
-let carrotGameBgImg, carrotImg;
+//carrot + basket 
+let carrotImg, carrotGameBg, basketImg;
+let basketWidth, basketHeight;
+let basketX, basketY;
+let basketdX = 5;
+let carrotSize = 40;
 
+let carrots = [];
+
+//health bar + score
+let fullHealthImg, twoHeartsImg, oneHeartImg, deadImg;
+let healthBarWidth, healthBarHeight, healthBarX, healthBarY;
+let carrotDeathScreen;
+
+let health, score, points;
+
+//carrot game state
+let carrotGamePlaying;
+let timer;
+
+//CLASSES
 class Carrot {
   constructor() {
-    this.x = random(width);
+    this.size = carrotSize;
+    this.x = random(width - this.size);
     this.y = 0;
     this.dx = 0;
     this.dy = random(5, 10);
-    this.notCaught = true;
-    
+  }
+
+  //check if carrot has been caught by the player
+  notCaught() {
+    if (this.x < basketX + basketWidth && this.x > basketX && this.y + this.size > basketY && this.y < basketY + basketHeight) {
+      return false;
+    }
+    else if (this.x + this.size < basketX + basketWidth && this.x + this.size > basketX && this.y + this.size > basketY && this.y < basketY + basketHeight) {
+      return false;
+    }
+    else {
+      return true;
+    }
   }
 
   move() {
-    this.y += this.dy;
+    if (this.y + this.size < height && this.notCaught()) {
+      this.y += this.dy;
+    }
   }
 
   display() {
-    if (this.notCaught) {
-      image(carrotImg, this.x, this.y, 15, 15);
+    if (this.notCaught() && this.onScreen()) {
+      image(carrotImg, this.x, this.y, this.size, this.size);
+    }
+  }
+
+  //check if the carrot has reached the bottom (player has missed the carrot)
+  onScreen() {
+    return this.y + this.size < height;
+  }
+  
+}
+
+class Timer {
+  constructor() {
+    this.interval = 1500;
+    this.lastSpawn = 0;
+  }
+
+  spawnCarrot() {
+    if (millis() - this.lastSpawn > this.interval && carrotGamePlaying) { //doesn't spawn carrots while in loss screen
+      let someCarrot = new Carrot();
+      carrots.push(someCarrot);
+      
+      this.lastSpawn = millis();
     }
   }
 }
 
-
-//PRELOAD + SETUP
+//PRELOAD
 function preload() {
   //sound preload
   bgMusic = loadSound("assets/bgMusic.ogg");
@@ -117,12 +172,22 @@ function preload() {
   shopMenuImg = loadImage("assets/shop-menu.png");
 
   //carrot game
-  carrotGameBgImg = loadImage("assets/carrot-game-bg.png");
   carrotImg = loadImage("assets/good-carrot.png");
+  carrotGameBg = loadImage("assets/carrot-game-bg.png");
+  basketImg = loadImage("assets/basket.png");
 
+  fullHealthImg = loadImage("assets/threeHearts.png");
+  twoHeartsImg = loadImage("assets/twoHearts.png");
+  oneHeartImg = loadImage("assets/oneHeart.png");
+  deadImg = loadImage("assets/noHearts.png");
 
+  carrotDeathScreen = loadImage("assets/loss-screen.png");
+
+  //lobby images
+  playerImg = loadImage("assets/player-character.png");
 }
 
+//DISPLAYING UI FUNCTIONS
 function displayMainStart() {
   if (gameState === "start") {
     image(mainMenuImg, 0, 0, width, height);
@@ -145,12 +210,6 @@ function displayLobby() {
   }
 }
 
-function displayCarrotGameBg() {
-  if (gameState === "carrot game") {
-    image(carrotGameBgImg, 0, 0, width, height);
-  }
-}
-
 function displayStart() {
   if (gameState === "startTicTacToe") {
     image(startMenuImg, 0, 0, width, height);
@@ -159,202 +218,94 @@ function displayStart() {
   }
 }
 
-function shouldBackButtonClick() {
-  return gameState === "startTicTacToe" || gameState === "comp" || gameState === "pvp" || gameState === "carrot game" || gameState === "shop";
-}
-
 function displayBackButton() {
   if (shouldBackButtonClick()) {
     image(backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight);
   }
 }
 
+function displayTicTacToePlayAgain() {
+  if (gameState !== "startTicTacToe" && gameEnd()) {
+    image(playAgainButton, playButtonX, playButtonY, playButtonWidth, playButtonHeight);
+  }
+}
+
+//player
+function displayPlayer() {
+  if (gameState === "lobby") {
+    image(playerImg, playerX, playerY, playerWidth, playerHeight);
+  }
+}
+
+//shop
 function displayShop() {
   if (gameState === "shop") {
     image(shopBgImg, 0, 0, width, height);
   }
 }
 
-function displayPlayAgain() {
-  if (gameState !== "startTicTacToe" && gameEnd()) {
-    image(playAgainButton, playButtonX, playButtonY, playButtonWidth, playButtonHeight);
+//carrot game
+function carrotScore() {
+  if (gameState === "carrot game") {
+    score = "Score: " + points;
+    
+    fill("black");
+    textSize(20);
+    textFont("VERDANA");
+    textAlign(CENTER);
+    
+    text(score, width/2, height * 0.96);
   }
 }
 
-function gameEnd() {
-  return victoryScreen === "other player win" || victoryScreen === "main player win" || victoryScreen === "draw";
-}
-
-function setup() {
-  bgMusic.stop(); //put stop at the beginning so when setup is called again, the songs don't layer on top
-  bgMusic.loop();
-
-  //makes sure canvas is square no matter the window's dimensions
-  if (windowWidth > windowHeight) {
-    createCanvas(windowHeight, windowHeight);
-  }
-  else if (windowHeight > windowWidth) {
-    createCanvas(windowWidth, windowWidth);
-  }
-  else {
-    createCanvas(windowWidth, windowHeight);
-  }
-  
-  grid = createEmptyBoard();
-  
-  //setting up values
-  rows = grid.length;
-  cols = grid[0].length;
-  cellSize = width / cols;
-  
-  optionButtonWidth = bunVsComp.width * 0.4;
-  optionButtonHeight = bunVsComp.height * 0.4;
-  optionButtonX = width *0.7;
-  pvpButtonY = height * 0.7;
-  pvcompButtonY = height * 0.5;
-  
-  playButtonWidth = playAgainButton.width * 0.5;
-  playButtonHeight = playAgainButton.height * 0.5;
-  playButtonX = width/2 - playButtonWidth/2;
-  playButtonY = height * 0.7;
-
-  startButtonWidth = startButtonImg.width * 0.35;
-  startButtonHeight = startButtonImg.height * 0.35;
-  startButtonX = width/2 - startButtonWidth/2;
-  startButtonY = height * 0.75;
-
-  backButtonImgWidth = backButtonImg.width * 0.4;
-  backButtonImgHeight = backButtonImg.height * 0.4;
-  backButtonImgX = width * 0.05;
-  backButtonImgY = height * 0.9;
-
-  ticTacToeIconWidth = ticTacToeIcon.width * 0.3;
-  ticTacToeIconHeight = ticTacToeIcon.height *0.3;
-  ticTacToeIconX = width * 0.85;
-  ticTacToeIconY = height * 0.25;
-
-  carrotGameIconWidth = ticTacToeIconWidth; //the icons in the right side of the lobby have same size
-  carrotGameIconHeight = ticTacToeIconHeight;
-  carrotGameIconX = ticTacToeIconX;
-  carrotGameIconY = ticTacToeIconY + ticTacToeIconHeight + 40;
-
-  shopIconWidth = ticTacToeIconWidth;
-  shopIconHeight = ticTacToeIconHeight;
-  shopIconX = ticTacToeIconX;
-  shopIconY = carrotGameIconY + carrotGameIconHeight + 40;
-
-  
-  victoryScreen = false;
-  yourTurn = true;
-  
-  blanks = 9;
-}
-
-function checkBackButton() {
-  if (shouldBackButtonClick()) {
-    if (mouseX > backButtonImgX && mouseX < backButtonImgX + backButtonImgWidth && mouseY > backButtonImgY && mouseY < backButtonImgY + backButtonImgHeight) {
-      gameState = "lobby";
-      setup();
+function displayHealthBar() {
+  if (gameState === "carrot game") {
+    if (health === 3) {
+      image(fullHealthImg, healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+    }
+    else if (health === 2) {
+      image(twoHeartsImg, healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+    }
+    else if (health === 1) {
+      image(oneHeartImg, healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+    }
+    else {
+      image(deadImg, healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+      carrotGamePlaying = false; //signal to display the loss screen
     }
   }
 }
 
-//INTERACTIVE CONTROLS
-
-function mousePressed() {
-  if (gameState === "start") {
-    if (mouseX > startButtonX && mouseX < startButtonX + startButtonWidth && mouseY > startButtonY && mouseY < startButtonY + startButtonHeight) {
-      gameState = "lobby";
-    }
-  }
-  //icons in the lobby
-  else if (gameState === "lobby") {
-    //tic tac toe
-    if (mouseX > ticTacToeIconX && mouseX < ticTacToeIconX + ticTacToeIconWidth && mouseY > ticTacToeIconY && mouseY < ticTacToeIconY + ticTacToeIconHeight) {
-      gameState = "startTicTacToe";
-    }
-    //carrot game
-    if (mouseX > carrotGameIconX && mouseX < carrotGameIconX + carrotGameIconWidth && mouseY > carrotGameIconY && mouseY < carrotGameIconY + carrotGameIconHeight) {
-      gameState = "carrot game";
-    }
-    //shop
-    if (mouseX > shopIconX && mouseX < shopIconX + shopIconWidth && mouseY > shopIconY && mouseY < shopIconY + shopIconHeight) {
-      gameState = "shop";
-    }
-  }
-
-  //shop
-  else if (gameState === "shop") {
-    checkBackButton();
-  }
-
-  //carrot game
-  else if (gameState === "carrot game") {
-    checkBackButton();
-  }
-
-  //tic tac toe start menu
-  else if (gameState === "startTicTacToe") {
-    checkBackButton();
-    //pvp button
-    if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvpButtonY && mouseY < pvpButtonY + optionButtonHeight) {
-      gameState = "pvp";
-      yourTurn = true;
-    }
-    //player vs computer button
-    if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvcompButtonY && mouseY < pvcompButtonY + optionButtonHeight) {
-      gameState = "comp";
-      yourTurn = true;
-    }
-  }
-  
-  //play again button
-  else if (gameEnd()) {
-    if (mouseX > playButtonX && mouseX < playButtonX + playButtonWidth && mouseY > playButtonY && mouseY < playButtonY + playButtonHeight) {
-      setup();
-    }
-    checkBackButton();
-  }
-
-  //placing tokens
-  else if (gameState !== "startTicTacToe" && noBlanks() === false) {
-
-    checkBackButton();
-
-    let x = Math.floor(mouseX / cellSize);
-    let y = Math.floor(mouseY / cellSize);
-  
-    if (yourTurn && grid[y][x] === 0) { //o
-      playerClick.play();
-      
-      grid[y][x] = 2;
-      yourTurn = !yourTurn;
-      lastSwitchTime = millis();
-      blanks--;
-      
-    }
-    if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) {
-      otherClick.play();
-      
-      grid[y][x] = 1;
-      yourTurn = !yourTurn;
-      blanks--;
-    }
-
+function displayLossScreen() {
+  if (!carrotGamePlaying && gameState === "carrot game") {
+    image(carrotDeathScreen, 0, 0, width, height); 
   }
 }
 
-//FUNCTIONS FOR THE BOARD ITSELF
-function createEmptyBoard() {
-  let emptyBoard = [];
-  
-  for (let y = 0; y < 3; y++) {
-    emptyBoard.push([]);
-    for (let x = 0; x < 3; x++) {
-      emptyBoard[y].push(0);
-    }
+function displayCarrotGameBg() {
+  if (gameState === "carrot game") {
+    image(carrotGameBg, 0, 0, width, height);
+    carrotGamePlaying = true;
   }
-  return emptyBoard;
+}
+
+function displayBasket() {
+  if (carrotGamePlaying) {
+    image(basketImg, basketX, basketY, basketWidth, basketHeight);
+  }
+}
+
+//tic tac toe
+function displayVictoryScreen() {
+  if (victoryScreen === "other player win") { 
+    image(otherVictoryScreenImg, 0, 0, width, height); //ghost buns win
+  }
+  else if (victoryScreen === "main player win") {
+    image(victoryScreenImg, 0, 0, width, height); //snow buns win
+  }
+  else if (victoryScreen === "draw") {
+    image(drawScreenImg, 0, 0, width, height); //draw screen
+  }
 }
 
 function displayBoard() {
@@ -376,7 +327,67 @@ function displayBoard() {
   }
 }
 
-//FUNCTIONS CONTROLLING COMPUTER PLAYER
+function dropCarrot() {
+  if (gameState === "carrot game") {
+    for (let i = carrots.length - 1; i >= 0; i--) {
+      if (!carrots[i].notCaught()) { //caught!
+        carrots.splice(i, 1);
+        points++;
+      }
+      else if (!carrots[i].onScreen()) { //missed carrot
+        carrots.splice(i, 1);
+        health--;
+      }
+      else {
+        carrots[i].move();
+        carrots[i].display();
+      }
+    }
+  }
+}
+
+function shouldBackButtonClick() {
+  return gameState === "startTicTacToe" || gameState === "comp" || gameState === "pvp" || gameState === "carrot game" || gameState === "shop";
+}
+
+//OTHER FUNCTIONS:
+//GENERAL
+function checkBackButton() {
+  if (shouldBackButtonClick()) {
+    if (mouseX > backButtonImgX && mouseX < backButtonImgX + backButtonImgWidth && mouseY > backButtonImgY && mouseY < backButtonImgY + backButtonImgHeight) {
+      gameState = "lobby";
+      setup();
+    }
+  }
+}
+
+//CARROT GAME
+function keepBasketIn() {
+  if (basketX < 0) {
+    basketX = 0;
+  }
+  if (basketX + basketWidth > width) {
+    basketX = width - basketWidth;
+  }
+}
+
+function controlBasket() {
+  if (carrotGamePlaying) {
+    if (keyIsDown(65)) { //a
+      basketX -= basketdX;
+    }
+    if (keyIsDown(68)) { //d
+      basketX += basketdX;
+    }
+  }
+}
+
+//TIC TAC TOE
+function gameEnd() {
+  return victoryScreen === "other player win" || victoryScreen === "main player win" || victoryScreen === "draw";
+}
+
+//controlling the computer player (tic tac toe)
 function computerTurn() {
   //if gameState is player vs computer, if it is not the player's turn, and it is not at the end of the game,
   //computer takes its turn after 2 seconds.
@@ -578,7 +589,7 @@ function computerTurn() {
   }
 }
 
-//VICTORY CONDITIONS
+//victory conditions (tic tac toe)
 function winCheck(oOrX, whoseVictory) {
   
   //across, down, zigzag from top left
@@ -623,17 +634,16 @@ function winCheck(oOrX, whoseVictory) {
 
 }
 
-//DISPLAY UI
-function displayVictoryScreen() {
-  if (victoryScreen === "other player win") { 
-    image(otherVictoryScreenImg, 0, 0, width, height); //ghost buns win
+function createEmptyBoard() {
+  let emptyBoard = [];
+  
+  for (let y = 0; y < 3; y++) {
+    emptyBoard.push([]);
+    for (let x = 0; x < 3; x++) {
+      emptyBoard[y].push(0);
+    }
   }
-  else if (victoryScreen === "main player win") {
-    image(victoryScreenImg, 0, 0, width, height); //snow buns win
-  }
-  else if (victoryScreen === "draw") {
-    image(drawScreenImg, 0, 0, width, height); //draw screen
-  }
+  return emptyBoard;
 }
 
 //if all tiles are filled, return true
@@ -641,10 +651,92 @@ function noBlanks() {
   return blanks === 0;
 }
 
-//DRAW LOOP (PUT EVERYTHING TOGETHER!)
-function draw() {
-  background("white");
+//INTERACTIVE CONTROLS
+function mousePressed() {
+  if (gameState === "start") {
+    if (mouseX > startButtonX && mouseX < startButtonX + startButtonWidth && mouseY > startButtonY && mouseY < startButtonY + startButtonHeight) {
+      gameState = "lobby";
+    }
+  }
+  //icons in the lobby
+  else if (gameState === "lobby") {
+    //tic tac toe
+    if (mouseX > ticTacToeIconX && mouseX < ticTacToeIconX + ticTacToeIconWidth && mouseY > ticTacToeIconY && mouseY < ticTacToeIconY + ticTacToeIconHeight) {
+      gameState = "startTicTacToe";
+    }
+    //carrot game
+    if (mouseX > carrotGameIconX && mouseX < carrotGameIconX + carrotGameIconWidth && mouseY > carrotGameIconY && mouseY < carrotGameIconY + carrotGameIconHeight) {
+      gameState = "carrot game";
+    }
+    //shop
+    if (mouseX > shopIconX && mouseX < shopIconX + shopIconWidth && mouseY > shopIconY && mouseY < shopIconY + shopIconHeight) {
+      gameState = "shop";
+    }
+  }
 
+  //shop
+  else if (gameState === "shop") {
+    checkBackButton();
+  }
+
+  //carrot game
+  else if (gameState === "carrot game") {
+    checkBackButton();
+  }
+
+  //tic tac toe start menu
+  else if (gameState === "startTicTacToe") {
+    checkBackButton();
+    //pvp button
+    if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvpButtonY && mouseY < pvpButtonY + optionButtonHeight) {
+      gameState = "pvp";
+      yourTurn = true;
+    }
+    //player vs computer button
+    if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvcompButtonY && mouseY < pvcompButtonY + optionButtonHeight) {
+      gameState = "comp";
+      yourTurn = true;
+    }
+  }
+  
+  //play again button
+  else if (gameEnd()) {
+    if (mouseX > playButtonX && mouseX < playButtonX + playButtonWidth && mouseY > playButtonY && mouseY < playButtonY + playButtonHeight) {
+      setup();
+    }
+    checkBackButton();
+  }
+
+  //placing tokens
+  else if (gameState !== "startTicTacToe" && noBlanks() === false) {
+
+    checkBackButton();
+
+    let x = Math.floor(mouseX / cellSize);
+    let y = Math.floor(mouseY / cellSize);
+  
+    if (yourTurn && grid[y][x] === 0) { //o
+      playerClick.play();
+      
+      grid[y][x] = 2;
+      yourTurn = !yourTurn;
+      lastSwitchTime = millis();
+      blanks--;
+      
+    }
+    if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) {
+      otherClick.play();
+      
+      grid[y][x] = 1;
+      yourTurn = !yourTurn;
+      blanks--;
+    }
+
+  }
+}
+
+//functions that help categorize + clean up the functions in the draw loop
+function ticTacToeGame() {
   computerTurn();
   displayBoard();
 
@@ -652,13 +744,137 @@ function draw() {
   winCheck(2, "main player win");
 
   displayVictoryScreen();
-  displayPlayAgain();
+  displayTicTacToePlayAgain();
   displayStart();
+}
 
-  displayMainStart();
-  displayLobby();
+function carrotGame() {
+  timer.spawnCarrot();
+
   displayCarrotGameBg();
+
+  displayBasket();
+  controlBasket();
+  keepBasketIn();
+
+  dropCarrot();
+
+  displayHealthBar();
+  carrotScore();
+  displayLossScreen();
+}
+
+function lobby() {
+  displayLobby();
+  displayPlayer();
+}
+
+//SETUP
+function setup() {
+  bgMusic.stop(); //put stop at the beginning so when setup is called again, the songs don't layer on top
+  bgMusic.loop();
+
+  //makes sure canvas is square no matter the window's dimensions
+  if (windowWidth > windowHeight) {
+    createCanvas(windowHeight, windowHeight);
+  }
+  else if (windowHeight > windowWidth) {
+    createCanvas(windowWidth, windowWidth);
+  }
+  else {
+    createCanvas(windowWidth, windowHeight);
+  }
+  
+  grid = createEmptyBoard();
+  
+  //setting up values
+  rows = grid.length;
+  cols = grid[0].length;
+  cellSize = width / cols;
+  
+  optionButtonWidth = bunVsComp.width * 0.4;
+  optionButtonHeight = bunVsComp.height * 0.4;
+  optionButtonX = width *0.7;
+  pvpButtonY = height * 0.7;
+  pvcompButtonY = height * 0.5;
+  
+  playButtonWidth = playAgainButton.width * 0.5;
+  playButtonHeight = playAgainButton.height * 0.5;
+  playButtonX = width/2 - playButtonWidth/2;
+  playButtonY = height * 0.7;
+
+  startButtonWidth = startButtonImg.width * 0.35;
+  startButtonHeight = startButtonImg.height * 0.35;
+  startButtonX = width/2 - startButtonWidth/2;
+  startButtonY = height * 0.75;
+
+  backButtonImgWidth = backButtonImg.width * 0.4;
+  backButtonImgHeight = backButtonImg.height * 0.4;
+  backButtonImgX = width * 0.05;
+  backButtonImgY = height * 0.9;
+
+  ticTacToeIconWidth = ticTacToeIcon.width * 0.3;
+  ticTacToeIconHeight = ticTacToeIcon.height *0.3;
+  ticTacToeIconX = width * 0.85;
+  ticTacToeIconY = height * 0.25;
+
+  carrotGameIconWidth = ticTacToeIconWidth; //the icons in the right side of the lobby have same size
+  carrotGameIconHeight = ticTacToeIconHeight;
+  carrotGameIconX = ticTacToeIconX;
+  carrotGameIconY = ticTacToeIconY + ticTacToeIconHeight + 40;
+
+  shopIconWidth = ticTacToeIconWidth;
+  shopIconHeight = ticTacToeIconHeight;
+  shopIconX = ticTacToeIconX;
+  shopIconY = carrotGameIconY + carrotGameIconHeight + 40;
+
+  playerWidth = playerImg.width * 0.8;
+  playerHeight = playerImg.height * 0.8;
+  playerX = width/2 - playerWidth/2;
+  playerY = height * 0.25;
+
+  //tic tac toe
+  victoryScreen = false;
+  yourTurn = true;
+  
+  blanks = 9;
+
+  //carrot game
+  basketWidth = basketImg.width * 0.3;
+  basketHeight = basketImg.height * 0.3;
+  
+  basketX = width/2;
+  basketY = height * 0.65;
+  
+  healthBarWidth = fullHealthImg.width * 0.5;
+  healthBarHeight = fullHealthImg.height * 0.5;
+  healthBarX = width * 0.7;
+  healthBarY = height * 0.9;
+  
+  points = 0;
+  health = 3;
+
+  timer = new Timer();
+  carrotGamePlaying = false;
+}
+
+//DRAW LOOP (PUT EVERYTHING TOGETHER!)
+function draw() {
+  background("white");
+
+  //tic tac toe
+  ticTacToeGame();
+
+  //general
+  displayMainStart();
   displayShop();
 
+  //lobby
+  lobby();
+
+  //carrot game
+  carrotGame();
+
+  //back button
   displayBackButton();
 }
