@@ -5,6 +5,9 @@
 // Extra:
 
 //NOTE TO SELF: 
+//    OTHER:
+//        - Fix the point-giving system for tic tac toe
+//        - (Don't give points if it's pvp)
 //    NEXT STEPS:
 //        - Fix audio !!! How to not start over music when calling back setup()
 //        - Closet Icon + Entrance to closet
