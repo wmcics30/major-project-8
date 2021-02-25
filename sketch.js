@@ -35,6 +35,8 @@ let blanks; //to count how many tiles are empty (for a draw situation)
 
 let bgMusic, playerClick, otherClick;
 
+let previousVictory;
+
 
 //general
 let mainMenuImg;
@@ -69,7 +71,8 @@ let fullHealthImg, twoHeartsImg, oneHeartImg, deadImg;
 let healthBarWidth, healthBarHeight, healthBarX, healthBarY;
 let carrotDeathScreen;
 
-let health, score, points;
+let health, score;
+let points = 0;
 
 //carrot game state
 let carrotGamePlaying;
@@ -124,7 +127,7 @@ class Timer {
   }
 
   spawnCarrot() {
-    if (millis() - this.lastSpawn > this.interval && carrotGamePlaying) { //doesn't spawn carrots while in loss screen
+    if (millis() - this.lastSpawn > this.interval && carrotGamePlaying) {
       let someCarrot = new Carrot();
       carrots.push(someCarrot);
       
@@ -234,6 +237,17 @@ function displayTicTacToePlayAgain() {
 function displayPlayer() {
   if (gameState === "lobby") {
     image(playerImg, playerX, playerY, playerWidth, playerHeight);
+  }
+}
+
+function displayWallet() {
+  if (gameState !== "start") {
+    fill("black");
+    textSize(20);
+    textFont("VERDANA");
+    textAlign(CENTER);
+
+    text("Coins: " + wallet, width * 0.1, height * 0.05);
   }
 }
 
@@ -631,6 +645,13 @@ function winCheck(oOrX, whoseVictory) {
     victoryScreen = "draw";
   }
 
+  //helps determine if player should get points when setup is called
+  if (oOrX === 2 && victoryScreen === "main player win") {
+    previousVictory = "player";
+  }
+  else if (oOrX === 1 && victoryScreen === "other player win") {
+    previousVictory = "other";
+  }
 
 }
 
@@ -649,6 +670,12 @@ function createEmptyBoard() {
 //if all tiles are filled, return true
 function noBlanks() {
   return blanks === 0;
+}
+
+function givePoint() {
+  if (previousVictory === "player") {
+    points += 25;
+  }
 }
 
 //INTERACTIVE CONTROLS
@@ -767,12 +794,16 @@ function carrotGame() {
 function lobby() {
   displayLobby();
   displayPlayer();
+  displayWallet();
 }
 
 //SETUP
 function setup() {
   bgMusic.stop(); //put stop at the beginning so when setup is called again, the songs don't layer on top
   bgMusic.loop();
+
+  givePoint();
+  wallet += points;
 
   //makes sure canvas is square no matter the window's dimensions
   if (windowWidth > windowHeight) {
@@ -856,6 +887,7 @@ function setup() {
 
   timer = new Timer();
   carrotGamePlaying = false;
+  previousVictory = "blank";
 }
 
 //DRAW LOOP (PUT EVERYTHING TOGETHER!)
@@ -868,12 +900,12 @@ function draw() {
   //general
   displayMainStart();
   displayShop();
-
-  //lobby
-  lobby();
-
+  
   //carrot game
   carrotGame();
+  
+  //lobby
+  lobby();
 
   //back button
   displayBackButton();
