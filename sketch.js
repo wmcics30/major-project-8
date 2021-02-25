@@ -242,7 +242,13 @@ function displayPlayer() {
 
 function displayWallet() {
   if (gameState !== "start") {
-    fill("black");
+    if (gameState === "shop") {
+      fill("white");
+    }
+    else {
+      fill("black");
+    }
+
     textSize(20);
     textFont("VERDANA");
     textAlign(CENTER);
@@ -887,6 +893,7 @@ function setup() {
 
   timer = new Timer();
   carrotGamePlaying = false;
+
   previousVictory = "blank";
 }
 
