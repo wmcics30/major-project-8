@@ -10,6 +10,7 @@
 //        - (Don't give points if it's pvp)
 //    NEXT STEPS:
 //        - Closet Icon + Entrance to closet
+//        - Arrow Key UI For Shop Menu
 //        - MORE (Check agenda)
 
 
@@ -385,9 +386,11 @@ function displayArrowKeys() {
 function displayWallet() {
   if (gameState !== "start") {
     if (gameState === "shop") {
+      noStroke();
       fill("white");
     }
     else {
+      noStroke();
       fill("black");
     }
 
@@ -410,6 +413,7 @@ function carrotScore() {
   if (gameState === "carrot game") {
     score = "Score: " + points;
     
+    noStroke();
     fill("black");
     textSize(20);
     textFont("VERDANA");
@@ -474,6 +478,9 @@ function displayBoard() {
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         if (grid[y][x] === 0) {
+          if (noStroke()) {
+            stroke("black");
+          }
           fill("white");
           rect(x*cellSize, y*cellSize, cellSize, cellSize); //blank space
         }
@@ -508,7 +515,7 @@ function dropCarrot() {
 }
 
 function shouldBackButtonClick() {
-  return gameState === "startTicTacToe" || gameState === "comp" || gameState === "pvp" || gameState === "carrot game" || gameState === "shop";
+  return gameState !== "start" && gameState !== "lobby" && (!carrotGamePlaying);
 }
 
 //OTHER FUNCTIONS:
