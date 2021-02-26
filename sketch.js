@@ -9,12 +9,31 @@
 //        - Fix the point-giving system for tic tac toe
 //        - (Don't give points if it's pvp)
 //    NEXT STEPS:
-//        - Closet Icon + Entrance to closet
-//        - Arrow Key UI For Shop Menu
-//        - MORE (Check agenda)
+//        - Adding purchased items into wardrobe
+//        - Equipping items (and remember to continue wearing)
+//        - Tabs working properly
+//        - MORE (Check agenda)?
 
 
 //GLOBAL VARIABLES
+
+//general
+let mainMenuImg;
+let lobbyImg;
+
+let backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight;
+
+let startButtonImg, startButtonX, startButtonY, startButtonWidth, startButtonHeight;
+let ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToeIconHeight;
+let carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight;
+let shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight;
+let closetIcon, closetX, closetY, closetIconSize;
+
+let playerImg, playerX, playerY, playerWidth, playerHeight;
+
+let wallet = 0; //player is poor :(
+
+let initialCreation = true;
 
 let gameState = "start"; 
 
@@ -39,25 +58,6 @@ let bgMusic, playerClick, otherClick;
 
 let previousVictory;
 
-
-//general
-let mainMenuImg;
-let lobbyImg;
-
-let backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight;
-
-let startButtonImg, startButtonX, startButtonY, startButtonWidth, startButtonHeight;
-let ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToeIconHeight;
-let carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight;
-let shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight;
-let closetIcon, closetX, closetY, closetWidth, closetHeight;
-
-let playerImg, playerX, playerY, playerWidth, playerHeight;
-
-let wallet = 0; //player is poor :(
-
-let initialCreation = true;
-
 //shop
 let shopBgImg, shopMenuImg, shopKeeperMessageOne;
 
@@ -72,7 +72,7 @@ let txtSize = 15;
 let mouseIsClicked;
 let royalOutfit, hoodie, carrotDoll, eyeMask, scarf, determinedLook, droopyEyes, excitedFace, headBow;
 
-let arrowY, arrowSize, leftArrowX, rightArrowX;
+let leftArrowImg, rightArrowImg, arrowY, arrowSize, leftArrowX, rightArrowX;
 
 let shopList = [];
 let menuPage;
@@ -83,6 +83,10 @@ let secondItemY = 160;
 let thirdItemY = 270;
 let fourthItemY = 380;
 let fifthItemY = 490;
+
+//closet + customization
+let closetBg;
+let hatTabImg, topTabImg, neckTabImg, otherTabImg;
 
 //carrot game
 //carrot + basket 
@@ -267,16 +271,15 @@ function preload() {
   shopIcon = loadImage("assets/shop-button.png");
   closetIcon = loadImage("assets/customize-button.png");
 
-  //background images preload
+  //starting img 
   mainMenuImg = loadImage("assets/start-menu.png");
-  lobbyImg = loadImage("assets/lobby-bg.png");
-
+  
   //shop
   shopBgImg = loadImage("assets/shop-bg.png");
   shopMenuImg = loadImage("assets/shop-menu.png");
 
   shopKeeperMessageOne = loadImage("assets/shop-keeper-msg1.png");
-
+  
   carrotDollImg = loadImage("assets/carrot-doll.png");
   determinedFaceImg = loadImage("assets/determined-face.png");
   droopyFaceImg = loadImage("assets/droopy-eyes.png");
@@ -287,6 +290,9 @@ function preload() {
   scarfImg = loadImage("assets/scarf.png");
   yellowHoodieImg = loadImage("assets/yellow-hoodie.png");
 
+  rightArrowImg = loadImage("assets/right-arrow.png");
+  leftArrowImg = loadImage("assets/left-arrow.png");
+
   //carrot game
   carrotImg = loadImage("assets/good-carrot.png");
   carrotGameBg = loadImage("assets/carrot-game-bg.png");
@@ -296,11 +302,21 @@ function preload() {
   twoHeartsImg = loadImage("assets/twoHearts.png");
   oneHeartImg = loadImage("assets/oneHeart.png");
   deadImg = loadImage("assets/noHearts.png");
-
+  
   carrotDeathScreen = loadImage("assets/loss-screen.png");
 
   //lobby images
   playerImg = loadImage("assets/player-character.png");
+  lobbyImg = loadImage("assets/lobby-bg.png");
+
+  //closet 
+  closetBg = loadImage("assets/closet-bg.png");
+
+  hatTabImg = loadImage("assets/hat-tab.png");
+  topTabImg = loadImage("assets/top-tab.png");
+  neckTabImg = loadImage("assets/neck-tab.png");
+  otherTabImg = loadImage("assets/other-tab.png");
+
 }
 
 //DISPLAYING UI FUNCTIONS
@@ -321,8 +337,7 @@ function displayLobby() {
     image(ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToeIconHeight);
     image(carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight);
     image(shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight);
-        //closet icon
-    rect(closetX, closetY, closetWidth, closetHeight);
+    image(closetIcon, closetX, closetY, closetIconSize, closetIconSize);
 
   }
 }
@@ -375,12 +390,10 @@ function displayShop() {
 function displayArrowKeys() {
   if (gameState === "shop") {
     if (menuPage >= 1) {
-      fill("black");
-
-      rect(rightArrowX, arrowY, arrowSize, arrowSize);
+      image(rightArrowImg, rightArrowX, arrowY, arrowSize, arrowSize);
     }
     if (menuPage > 1) {
-      rect(leftArrowX, arrowY, arrowSize, arrowSize);
+      image(leftArrowImg, leftArrowX, arrowY, arrowSize, arrowSize);
     }
   }
 }
@@ -518,6 +531,13 @@ function dropCarrot() {
 
 function shouldBackButtonClick() {
   return gameState !== "start" && gameState !== "lobby" && (!carrotGamePlaying);
+}
+
+//closet
+function displayClosetBg() {
+  if (gameState === "customize") {
+    image(closetBg, 0, 0, width, height);
+  }
 }
 
 //OTHER FUNCTIONS:
@@ -875,7 +895,7 @@ function mousePressed() {
       gameState = "shop";
     }
     //closet
-    if (mouseX > closetX && mouseX < closetX + closetWidth && mouseY > closetY && mouseY < closetY + closetHeight) {
+    if (mouseX > closetX && mouseX < closetX + closetIconSize && mouseY > closetY && mouseY < closetY + closetIconSize) {
       gameState = "customize";
     }
   }
@@ -986,7 +1006,6 @@ function carrotGame() {
 function lobby() {
   displayLobby();
   displayPlayer();
-  displayWallet();
 }
 
 function shop() {
@@ -996,6 +1015,10 @@ function shop() {
 
   displayItems();
   displayArrowKeys();
+}
+
+function closet() {
+  displayClosetBg();
 }
 
 //SETUP
@@ -1052,8 +1075,7 @@ function setup() {
 
   closetX = width * 0.15;
   closetY = height * 0.77;
-  closetWidth = 70;
-  closetHeight = 70;
+  closetIconSize = 90;
 
   playerWidth = playerImg.width * 0.8;
   playerHeight = playerImg.height * 0.8;
@@ -1135,6 +1157,9 @@ function draw() {
   //shop
   shop();
 
-  //back button
+  //closet
+  closet();
+
   displayBackButton();
+  displayWallet();
 }
