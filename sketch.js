@@ -1108,6 +1108,7 @@ function setup() {
   //only make these once
   if (initialCreation) {
     createShopObjects();
+    bgMusic.setVolume(0.5); //made the song quieter since it was pretty loud
     bgMusic.loop();
     timer = new Timer();
   }
