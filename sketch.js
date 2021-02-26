@@ -42,7 +42,7 @@ let previousVictory;
 
 //general
 let mainMenuImg;
-let lobbyImg, closetIcon;
+let lobbyImg;
 
 let backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight;
 
@@ -50,6 +50,7 @@ let startButtonImg, startButtonX, startButtonY, startButtonWidth, startButtonHei
 let ticTacToeIcon, ticTacToeIconX, ticTacToeIconY, ticTacToeIconWidth, ticTacToeIconHeight;
 let carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight;
 let shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight;
+let closetIcon, closetX, closetY, closetWidth, closetHeight;
 
 let playerImg, playerX, playerY, playerWidth, playerHeight;
 
@@ -321,6 +322,7 @@ function displayLobby() {
     image(carrotGameIcon, carrotGameIconX, carrotGameIconY, carrotGameIconWidth, carrotGameIconHeight);
     image(shopIcon, shopIconX, shopIconY, shopIconWidth, shopIconHeight);
         //closet icon
+    rect(closetX, closetY, closetWidth, closetHeight);
 
   }
 }
@@ -872,6 +874,10 @@ function mousePressed() {
     if (mouseX > shopIconX && mouseX < shopIconX + shopIconWidth && mouseY > shopIconY && mouseY < shopIconY + shopIconHeight) {
       gameState = "shop";
     }
+    //closet
+    if (mouseX > closetX && mouseX < closetX + closetWidth && mouseY > closetY && mouseY < closetY + closetHeight) {
+      gameState = "customize";
+    }
   }
 
   //shop
@@ -1043,6 +1049,11 @@ function setup() {
   shopIconHeight = ticTacToeIconHeight;
   shopIconX = ticTacToeIconX;
   shopIconY = carrotGameIconY + carrotGameIconHeight + 40;
+
+  closetX = width * 0.15;
+  closetY = height * 0.77;
+  closetWidth = 70;
+  closetHeight = 70;
 
   playerWidth = playerImg.width * 0.8;
   playerHeight = playerImg.height * 0.8;
