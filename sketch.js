@@ -9,9 +9,7 @@
 //        - Fix the point-giving system for tic tac toe
 //        - (Don't give points if it's pvp)
 //    NEXT STEPS:
-//        - Fix audio !!! How to not start over music when calling back setup()
 //        - Closet Icon + Entrance to closet
-//        - Scoring system
 //        - MORE (Check agenda)
 
 
@@ -92,7 +90,7 @@ let basketX, basketY;
 let basketdX = 5;
 let carrotSize = 40;
 
-let carrots = [];
+let carrots;
 
 //health bar + score
 let fullHealthImg, twoHeartsImg, oneHeartImg, deadImg;
@@ -155,7 +153,7 @@ class Timer {
   }
 
   spawnCarrot() {
-    if (millis() - this.lastSpawn > this.interval && gameState === "carrot game") {
+    if (millis() - this.lastSpawn > this.interval && carrotGamePlaying) {
       let someCarrot = new Carrot();
       carrots.push(someCarrot);
       
@@ -916,8 +914,7 @@ function mousePressed() {
 
   //placing tokens
   else if (gameState !== "startTicTacToe" && noBlanks() === false) {
-
-    checkBackButton();
+    // checkBackButton();
 
     let x = Math.floor(mouseX / cellSize);
     let y = Math.floor(mouseY / cellSize);
@@ -931,6 +928,7 @@ function mousePressed() {
       blanks--;
       
     }
+
     if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) {
       otherClick.play();
       
@@ -939,6 +937,7 @@ function mousePressed() {
       blanks--;
     }
 
+    checkBackButton();
   }
 }
 
@@ -1095,6 +1094,7 @@ function setup() {
   carrotGamePlaying = false;
 
   previousVictory = "blank";
+  carrots = [];
 }
 
 //DRAW LOOP (PUT EVERYTHING TOGETHER!)
