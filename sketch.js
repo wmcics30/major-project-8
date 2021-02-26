@@ -900,6 +900,11 @@ function mousePressed() {
     }
   }
 
+  //closet
+  else if (gameState === "customize") {
+    checkBackButton();
+  }
+
   //shop
   else if (gameState === "shop") {
     checkBackButton();
@@ -946,31 +951,33 @@ function mousePressed() {
   }
 
   //placing tokens
-  else if (gameState !== "startTicTacToe" && noBlanks() === false) {
-    // checkBackButton();
+  else if (gameState === "pvp" || gameState === "comp" && noBlanks() === false) {
 
     let x = Math.floor(mouseX / cellSize);
     let y = Math.floor(mouseY / cellSize);
   
     if (yourTurn && grid[y][x] === 0) { //o
-      playerClick.play();
-      
       grid[y][x] = 2;
-      yourTurn = !yourTurn;
       lastSwitchTime = millis();
-      blanks--;
-      
     }
 
     if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) {
-      otherClick.play();
-      
       grid[y][x] = 1;
-      yourTurn = !yourTurn;
-      blanks--;
     }
 
     checkBackButton();
+
+    //plays sound and changes turn if the back button is not called
+    if (yourTurn && gameState === "pvp" || gameState === "comp") {
+      playerClick.play();
+      yourTurn = !yourTurn;
+      blanks--;
+    }
+    else if (!yourTurn && gameState === "pvp") {
+      otherClick.play();
+      yourTurn = !yourTurn;
+      blanks--;
+    }
   }
 }
 
