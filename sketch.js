@@ -1,8 +1,14 @@
 // Bunny vs Bunny
 // Jinny Kim
 // 02. 08. 2021 --> 02. 26. 2021
-//
-// Extra:
+
+// NOTE: The purpose of my game is to mainly be for children, with
+//      mini-games that they could enjoy (I wish I could have
+//      had more time to play around with even more mini-games).
+//      I also thought that people would like a customization factor,
+//      where they could customize their own little bunnyp5.BandPass()
+
+// EXTRA: 
 
 
 //GLOBAL VARIABLES
@@ -69,6 +75,8 @@ let royalOutfit, hoodie, carrotDoll, eyeMask, scarf, determinedLook, droopyEyes,
 let shopList = [];
 let menuPage;
 
+let purchaseSound;
+
 //per page on shop's menu
 let firstItemY, secondItemY, thirdItemY, fourthItemY, fifthItemY;
 
@@ -89,6 +97,7 @@ let basketdX = 5;
 let carrotSize = 40;
 
 let carrots;
+let carrotGetSound;
 
 //health bar + score
 let fullHealthImg, twoHeartsImg, oneHeartImg, deadImg;
@@ -343,8 +352,12 @@ function findPosition(number) {
 function preload() {
   //sound preload
   bgMusic = loadSound("assets/bgMusic.ogg");
+
   playerClick = loadSound("assets/playerSound.wav");
   otherClick = loadSound("assets/otherPlayerSound.wav");
+
+  carrotGetSound = loadSound("assets/coin1.wav");
+  purchaseSound = loadSound("assets/coin8.wav");
 
   //"X" and "O" image preload
   ghostImg = loadImage("assets/ghostBun.png");
@@ -371,7 +384,6 @@ function preload() {
 
   //starting img 
   mainMenuImg = loadImage("assets/start-menu.png");
-  
   
   //carrot game
   carrotImg = loadImage("assets/good-carrot.png");
@@ -611,25 +623,6 @@ function displayBoard() {
   }
 }
 
-function dropCarrot() {
-  if (gameState === "carrot game") {
-    for (let i = carrots.length - 1; i >= 0; i--) {
-      if (!carrots[i].notCaught()) { //caught!
-        carrots.splice(i, 1);
-        points++;
-      }
-      else if (!carrots[i].onScreen()) { //missed carrot
-        carrots.splice(i, 1);
-        health--;
-      }
-      else {
-        carrots[i].move();
-        carrots[i].display();
-      }
-    }
-  }
-}
-
 function shouldBackButtonClick() {
   return gameState !== "start" && gameState !== "lobby" && (!carrotGamePlaying);
 }
@@ -701,6 +694,26 @@ function controlBasket() {
     }
     if (keyIsDown(68)) { //d
       basketX += basketdX;
+    }
+  }
+}
+
+function dropCarrot() {
+  if (gameState === "carrot game") {
+    for (let i = carrots.length - 1; i >= 0; i--) {
+      if (!carrots[i].notCaught()) { //caught!
+        carrots.splice(i, 1);
+        carrotGetSound;
+        points++;
+      }
+      else if (!carrots[i].onScreen()) { //missed carrot
+        carrots.splice(i, 1);
+        health--;
+      }
+      else {
+        carrots[i].move();
+        carrots[i].display();
+      }
     }
   }
 }
