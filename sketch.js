@@ -715,7 +715,10 @@ function dropCarrot() {
     for (let i = carrots.length - 1; i >= 0; i--) {
       if (!carrots[i].notCaught()) { //caught!
         carrots.splice(i, 1);
+
+        carrotGetSound.setVolume(0.5);
         carrotGetSound.play();
+        
         points++;
       }
       else if (!carrots[i].onScreen()) { //missed carrot
@@ -1336,7 +1339,7 @@ function setup() {
   else if (allowedPlayCarrotBgm && gameState === "carrot game") {
     lobbyMusic.stop();
     
-    carrotBgm.setVolume(0.5);
+    carrotBgm.setVolume(0.3);
     carrotBgm.loop();
 
     allowedPlayLobbyBgm = true;
