@@ -15,7 +15,8 @@
 
 //general
 let mainMenuImg;
-let bgMusic;
+let lobbyMusic, carrotBgm, ticTacToeBgm;
+let equipSound;
 
 let lobbyImg;
 
@@ -33,6 +34,10 @@ let wallet = 0; //player is poor :(
 
 //used to only run certain things one time, even if setup is called multiple times
 let initialCreation = true;
+
+let allowedPlayTicTacToeBgm = true;
+let allowedPlayLobbyBgm = true;
+let allowedPlayCarrotBgm = true;
 
 let gameState = "start"; 
 
@@ -275,6 +280,7 @@ class ShopItem {
           if (wallet >= this.price && !this.bought) {
             this.bought = true;
             wallet -= this.price;
+            purchaseSound.play();
 
             //add it to the list of items player owns
             playerList.push(this);
@@ -311,6 +317,8 @@ class ShopItem {
       if (menuPage === this.wardrobePage) {
         if (mouseX > this.wardrobeX && mouseX < this.wardrobeX + this.width + 170 && mouseY > this.wardrobeY && mouseY < this.wardrobeY + this.height) {
           this.wearing = !this.wearing;
+          equipSound.setVolume(0.6);
+          equipSound.play();
         }
       }
     }
@@ -351,10 +359,14 @@ function findPosition(number) {
 //PRELOAD
 function preload() {
   //sound preload
-  bgMusic = loadSound("assets/bgMusic.ogg");
+  lobbyMusic = loadSound("assets/TownTheme.mp3");
+  carrotBgm = loadSound("assets/happy.mp3");
+  ticTacToeBgm = loadSound("assets/bgMusic.ogg");
 
   playerClick = loadSound("assets/playerSound.wav");
   otherClick = loadSound("assets/otherPlayerSound.wav");
+
+  equipSound = loadSound("assets/cloth-heavy.wav");
 
   carrotGetSound = loadSound("assets/coin1.wav");
   purchaseSound = loadSound("assets/coin8.wav");
@@ -703,7 +715,7 @@ function dropCarrot() {
     for (let i = carrots.length - 1; i >= 0; i--) {
       if (!carrots[i].notCaught()) { //caught!
         carrots.splice(i, 1);
-        carrotGetSound;
+        carrotGetSound.play();
         points++;
       }
       else if (!carrots[i].onScreen()) { //missed carrot
@@ -1033,10 +1045,16 @@ function mousePressed() {
     //into tic tac toe
     if (mouseX > ticTacToeIconX && mouseX < ticTacToeIconX + ticTacToeIconWidth && mouseY > ticTacToeIconY && mouseY < ticTacToeIconY + ticTacToeIconHeight) {
       gameState = "startTicTacToe";
+
+      //call setup() to play music
+      setup();
     }
     //into carrot game
     if (mouseX > carrotGameIconX && mouseX < carrotGameIconX + carrotGameIconWidth && mouseY > carrotGameIconY && mouseY < carrotGameIconY + carrotGameIconHeight) {
       gameState = "carrot game";
+
+      //call setup() to play music
+      setup();
     }
     //into shop
     if (mouseX > shopIconX && mouseX < shopIconX + shopIconWidth && mouseY > shopIconY && mouseY < shopIconY + shopIconHeight) {
@@ -1301,10 +1319,38 @@ function setup() {
   if (initialCreation) {
     createShopObjects();
 
-    bgMusic.setVolume(0.5);
-    bgMusic.loop();
-
     timer = new Timer();
+  }
+
+  //play different bgm in different areas (but don't overlap)
+  if (allowedPlayLobbyBgm && (gameState === "lobby" || gameState === "start" || gameState === "shop" || gameState === "customize")) {
+    carrotBgm.stop();
+    ticTacToeBgm.stop();
+    
+    lobbyMusic.setVolume(0.5);
+    lobbyMusic.loop();
+
+    allowedPlayLobbyBgm = false;
+    allowedPlayTicTacToeBgm = true;
+  }
+  else if (allowedPlayCarrotBgm && gameState === "carrot game") {
+    lobbyMusic.stop();
+    
+    carrotBgm.setVolume(0.5);
+    carrotBgm.loop();
+
+    allowedPlayLobbyBgm = true;
+    allowedPlayTicTacToeBgm = true;
+  }
+  else if (allowedPlayTicTacToeBgm && gameState === "startTicTacToe") {
+    lobbyMusic.stop();
+
+    ticTacToeBgm.setVolume(0.5);
+    ticTacToeBgm.loop();
+
+    allowedPlayTicTacToeBgm = false;
+    allowedPlayLobbyBgm = true;
+
   }
 
   //put into a list so i can use for loops to run display() and buy() on each item efficiently
