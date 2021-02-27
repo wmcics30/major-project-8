@@ -8,7 +8,7 @@
 //      I also thought that people would like a customization factor,
 //      where they could customize their own little bunnyp5.BandPass()
 
-// EXTRA: 
+// CREDIT: All sounds used are from OpenGameArt.org :)
 
 
 //GLOBAL VARIABLES
