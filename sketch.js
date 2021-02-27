@@ -1,24 +1,16 @@
 // Bunny vs Bunny
 // Jinny Kim
-// 02. 08. 2021
+// 02. 08. 2021 --> 02. 26. 2021
 //
 // Extra:
-
-//NOTE TO SELF: 
-//    OTHER:
-//        - Fix the point-giving system for tic tac toe
-//        - (Don't give points if it's pvp)
-//    NEXT STEPS:
-//        - Adding purchased items into wardrobe
-//        - Equipping items (and remember to continue wearing)
-//        - Tabs working properly
-//        - MORE (Check agenda)?
 
 
 //GLOBAL VARIABLES
 
 //general
 let mainMenuImg;
+let bgMusic;
+
 let lobbyImg;
 
 let backButtonImg, backButtonImgX, backButtonImgY, backButtonImgWidth, backButtonImgHeight;
@@ -33,6 +25,7 @@ let playerImg, playerX, playerY, playerWidth, playerHeight;
 
 let wallet = 0; //player is poor :(
 
+//used to only run certain things one time, even if setup is called multiple times
 let initialCreation = true;
 
 let gameState = "start"; 
@@ -54,9 +47,10 @@ let lastSwitchTime = 0;
 let randomX, randomY;
 let blanks; //to count how many tiles are empty (for a draw situation)
 
-let bgMusic, playerClick, otherClick;
+let playerClick, otherClick;
 
 let previousVictory;
+let previousGameMode;
 
 //shop
 let shopBgImg, shopMenuImg, shopKeeperMessageOne;
@@ -69,24 +63,22 @@ let shopMsgWidth, shopMsgHeight, shopMsgX, shopMsgY;
 
 let txtSize = 15;
 
-let mouseIsClicked;
-let royalOutfit, hoodie, carrotDoll, eyeMask, scarf, determinedLook, droopyEyes, excitedFace, headBow;
-
 let leftArrowImg, rightArrowImg, arrowY, arrowSize, leftArrowX, rightArrowX;
 
+let royalOutfit, hoodie, carrotDoll, eyeMask, scarf, determinedLook, droopyEyes, excitedFace, headBow;
 let shopList = [];
 let menuPage;
 
-//per page
-let firstItemY = 50;
-let secondItemY = 160;
-let thirdItemY = 270;
-let fourthItemY = 380;
-let fifthItemY = 490;
+//per page on shop's menu
+let firstItemY, secondItemY, thirdItemY, fourthItemY, fifthItemY;
 
 //closet + customization
 let closetBg;
-let hatTabImg, topTabImg, neckTabImg, otherTabImg;
+let otherTabImg;
+let tabX, tabY, tabWidth, tabHeight;
+
+let playerList = [];
+let firstOwnedY, secondOwnedY, thirdOwnedY, fourthOwnedY;
 
 //carrot game
 //carrot + basket 
@@ -175,27 +167,52 @@ class ShopItem {
 
     this.price = price;
     this.desc = desc;
-    this.bought = false;
 
     this.width = this.itemImg.width * 0.2;
     this.height = this.itemImg.height * 0.2;
- 
-    this.x = width * 0.62;
-    this.y = y;
 
-    this.page = page;
+    //appearance in the shop
+    this.storeShopX = width * 0.62;
+    this.storeShopY = y;
+ 
+    this.x = this.storeShopX;
+    this.y = this.storeShopY;
+
+    //appearance in the wardrobe
+    this.wardrobePage = 1;
+
+    this.storePage = page;
+    this.wardrobeX = width * 0.57;
+    this.wardrobeY;
+
+    //states
+    this.bought = false;
+    this.wearing = false;
+
+    //y values of the order of purchases per page
+    firstOwnedY = 130;
+    secondOwnedY = 240;
+    thirdOwnedY = 350;
+    fourthOwnedY = 460;
     
+    //text in the shop
     this.text = this.item + "\nCost: " + str(this.price) + "\n" + this.desc;
   }
 
-  display() {
+  menuDisplay() {
+    
     if (gameState === "shop") {
-      if (menuPage === this.page) {
+      if (menuPage === this.storePage) {
+        this.x = this.storeShopX;
+        this.y = this.storeShopY;
+
+        //white space + preview of item
         noStroke();
         fill("white");
         rect(this.x + this.width + 10, this.y, 160, this.height);
         image(this.itemImg, this.x, this.y, this.width, this.height);
     
+        //text description for the shop
         textAlign(LEFT, CENTER);
         fill("black");
         textSize(txtSize);
@@ -213,18 +230,78 @@ class ShopItem {
         }
       }
     }
-
+    //in the wardrobe
+    else if (gameState === "customize") {
+      //button to click on item
+      if (this.playerOwns()) {
+        if (menuPage === this.wardrobePage) {
+          //white space + preview item
+          noStroke();
+          fill("white");
+          rect(this.x + this.width + 10, this.y, 160, this.height);
+          image(this.itemImg, this.x, this.y, this.width, this.height);
+      
+          //text for wardrobe
+          textAlign(LEFT, CENTER);
+          fill("black");
+          textSize(txtSize);
+          text(this.text, this.x + this.width + 20, this.y + 45);
+        }
+      }
+    }
   }
 
+  displayOutfit() {
+    if (this.wearing) {
+      noStroke();
+      image(this.itemImg, playerX, playerY, playerWidth, playerHeight);
+    }
+  }
+
+  //clicked button to buy from shop
   buy() {
     if (gameState === "shop") {
-      if (menuPage === this.page) {
+      if (menuPage === this.storePage) {
         if (mouseX > this.x && mouseX < this.x + this.width + 170 && mouseY > this.y && mouseY < this.y + this.height) {
           if (wallet >= this.price && !this.bought) {
             this.bought = true;
             wallet -= this.price;
-            mouseIsClicked = false;
+
+            //add it to the list of items player owns
+            playerList.push(this);
+
+            //calculate the page it needs to be in (in the wardrobe menu)
+            if (playerList.length > 4) {
+              this.wardrobePage = Math.floor((playerList.length + 4)/4);
+            }
+
+            //determine the y value in the wardrobe menu
+            for (let i = 0; i < playerList.length; i++) {
+              if (findPosition(i) === 0) {
+                this.wardrobeY = firstOwnedY;
+              }
+              else if (findPosition(i) === 1) {
+                this.wardrobeY = secondOwnedY;
+              }
+              else if (findPosition(i) === 2) {
+                this.wardrobeY = thirdOwnedY;
+              }
+              else if (findPosition(i) === 3) {
+                this.wardrobeY = fourthOwnedY;
+              }
+            } 
           }
+        }
+      }
+    }
+  }
+
+  //clicked button to wear from wardrobe
+  wardrobeClick() {
+    if (gameState === "customize") {
+      if (menuPage === this.wardrobePage) {
+        if (mouseX > this.wardrobeX && mouseX < this.wardrobeX + this.width + 170 && mouseY > this.wardrobeY && mouseY < this.wardrobeY + this.height) {
+          this.wearing = !this.wearing;
         }
       }
     }
@@ -232,13 +309,34 @@ class ShopItem {
 
   //used to detect page location
   pageNumber() {
-    return this.page;
+    return this.storePage;
   }
 
   //will be used to detect whether an item should appear in the storage/closet later
   playerOwns() {
     return this.bought;
   }
+
+  //change some values when transitioning into the wardrobe
+  moveToCloset() {
+    if (this.playerOwns() && gameState === "customize") {
+      this.text = this.item + "\n" + this.desc;
+
+      this.x = this.wardrobeX;
+      this.y = this.wardrobeY;
+    }
+  }
+}
+
+//function to help find y position of wardrobe items
+function findPosition(number) {
+  if (number >= 4) {
+    number -= 4;
+  }
+  else {
+    return number;
+  }
+  return number;
 }
 
 //PRELOAD
@@ -274,7 +372,24 @@ function preload() {
   //starting img 
   mainMenuImg = loadImage("assets/start-menu.png");
   
-  //shop
+  
+  //carrot game
+  carrotImg = loadImage("assets/good-carrot.png");
+  carrotGameBg = loadImage("assets/carrot-game-bg.png");
+  basketImg = loadImage("assets/basket.png");
+  
+  fullHealthImg = loadImage("assets/threeHearts.png");
+  twoHeartsImg = loadImage("assets/twoHearts.png");
+  oneHeartImg = loadImage("assets/oneHeart.png");
+  deadImg = loadImage("assets/noHearts.png");
+  
+  carrotDeathScreen = loadImage("assets/loss-screen.png");
+
+  //lobby images
+  playerImg = loadImage("assets/player-character.png");
+  lobbyImg = loadImage("assets/lobby-bg.png");
+
+  //shop + wardrobe
   shopBgImg = loadImage("assets/shop-bg.png");
   shopMenuImg = loadImage("assets/shop-menu.png");
 
@@ -293,28 +408,7 @@ function preload() {
   rightArrowImg = loadImage("assets/right-arrow.png");
   leftArrowImg = loadImage("assets/left-arrow.png");
 
-  //carrot game
-  carrotImg = loadImage("assets/good-carrot.png");
-  carrotGameBg = loadImage("assets/carrot-game-bg.png");
-  basketImg = loadImage("assets/basket.png");
-
-  fullHealthImg = loadImage("assets/threeHearts.png");
-  twoHeartsImg = loadImage("assets/twoHearts.png");
-  oneHeartImg = loadImage("assets/oneHeart.png");
-  deadImg = loadImage("assets/noHearts.png");
-  
-  carrotDeathScreen = loadImage("assets/loss-screen.png");
-
-  //lobby images
-  playerImg = loadImage("assets/player-character.png");
-  lobbyImg = loadImage("assets/lobby-bg.png");
-
-  //closet 
   closetBg = loadImage("assets/closet-bg.png");
-
-  hatTabImg = loadImage("assets/hat-tab.png");
-  topTabImg = loadImage("assets/top-tab.png");
-  neckTabImg = loadImage("assets/neck-tab.png");
   otherTabImg = loadImage("assets/other-tab.png");
 
 }
@@ -342,9 +436,12 @@ function displayLobby() {
   }
 }
 
+//(start menu of tic tac toe)
 function displayStart() {
   if (gameState === "startTicTacToe") {
     image(startMenuImg, 0, 0, width, height);
+    
+    //game mode options in tic tac toe
     image(bunVsComp, optionButtonX, pvcompButtonY, optionButtonWidth, optionButtonHeight);
     image(bunVsBun, optionButtonX, pvpButtonY, optionButtonWidth, optionButtonHeight);
   }
@@ -367,14 +464,18 @@ function displayPlayer() {
   if (gameState === "lobby") {
     image(playerImg, playerX, playerY, playerWidth, playerHeight);
   }
+  else if (gameState === "customize") {
+    image(playerImg, playerX, playerY, playerWidth, playerHeight);
+  }
 }
 
 //shop
+//items in stock
 function displayItems() {
   for (let item of shopList) {
     if (item.pageNumber() === menuPage) {
       for (let i = 0; i < shopList.length; i++) {
-        shopList[i].display();
+        shopList[i].menuDisplay();
       }
     }
   }
@@ -388,7 +489,7 @@ function displayShop() {
 }
 
 function displayArrowKeys() {
-  if (gameState === "shop") {
+  if (gameState === "shop" || gameState === "customize") {
     if (menuPage >= 1) {
       image(rightArrowImg, rightArrowX, arrowY, arrowSize, arrowSize);
     }
@@ -540,6 +641,28 @@ function displayClosetBg() {
   }
 }
 
+function displayWardrobeTab() {
+  if (gameState === "customize") {
+    image(otherTabImg, tabX, tabY, tabWidth, tabHeight);
+  }
+}
+
+function displayWardrobeItems() {
+  //display as buttons (preview)
+  if (gameState === "customize") {
+    for (let item of playerList) {
+      item.moveToCloset();
+      item.menuDisplay();
+    }
+  }
+  //display when worn
+  if (gameState === "customize" || gameState === "lobby") {
+    for (let item of playerList) {
+      item.displayOutfit();
+    }
+  }
+}
+
 //OTHER FUNCTIONS:
 //GENERAL
 function checkBackButton() {
@@ -548,6 +671,16 @@ function checkBackButton() {
       gameState = "lobby";
       setup();
     }
+  }
+}
+
+function checkArrowKeys() {
+  //used for both shop and wardrobe
+  if (mouseX > rightArrowX && mouseX < rightArrowX + arrowSize && mouseY > arrowY && mouseY < arrowY + arrowSize) {
+    menuPage++;
+  }
+  else if (menuPage > 1 && mouseX > leftArrowX && mouseX < leftArrowX + arrowSize && mouseY > arrowY && mouseY < arrowY + arrowSize) {
+    menuPage--;
   }
 }
 
@@ -849,7 +982,7 @@ function noBlanks() {
 }
 
 function givePoint() {
-  if (previousVictory === "player") {
+  if (previousVictory === "player" && previousGameMode === "comp") {
     points += 25;
   }
 }
@@ -857,24 +990,26 @@ function givePoint() {
 //SHOP
 function createShopObjects() {
   //page 1
-  royalOutfit = new ShopItem("Royal Outfit", royalOutfitImg, '"Fits just right. \nYou are worthy!"', 800, firstItemY, 1);
-  hoodie = new ShopItem("Yellow Hoodie", yellowHoodieImg, '"So comfortable!"', 100, secondItemY, 1);
-  carrotDoll = new ShopItem("Carrot Doll", carrotDollImg, '"Can and will \nbecome your best \nfriend!"', 150, thirdItemY, 1);
-  eyeMask = new ShopItem("Eye Mask", eyeMaskImg, '"Perfect for the \nperfect nap!"', 80, fourthItemY, 1);
-  scarf = new ShopItem("Red Scarf", scarfImg, '"I feel pretty \nadventurous!"', 80, fifthItemY, 1);
+  royalOutfit = new ShopItem("Royal Outfit", royalOutfitImg, '"Fits just right. \nYou are worthy!"', 800, firstItemY, 1, "top");
+  hoodie = new ShopItem("Yellow Hoodie", yellowHoodieImg, '"So comfortable!"', 100, secondItemY, 1, "top");
+  carrotDoll = new ShopItem("Carrot Doll", carrotDollImg, '"Can and will \nbecome your best \nfriend!"', 150, thirdItemY, 1, "other");
+  eyeMask = new ShopItem("Eye Mask", eyeMaskImg, '"Perfect for the \nperfect nap!"', 80, fourthItemY, 1, "hat");
+  scarf = new ShopItem("Red Scarf", scarfImg, '"I feel pretty \nadventurous!"', 80, fifthItemY, 1, "neck");
 
   //page 2
-  determinedLook = new ShopItem("Determined", determinedFaceImg, '"Determined as \never!"', 50, firstItemY, 2);
-  droopyEyes = new ShopItem("Droopy", droopyFaceImg, '"Is it nap time \nyet?"', 50, secondItemY, 2);
-  excitedFace = new ShopItem("Excited", excitedFaceImg, '"WOW! So excited!"', 50, thirdItemY, 2);
-  headBow = new ShopItem("Blue Bow", headBowImg, '"Blue like the sky! \nWill carrots fall \nfrom here too?"', 80, fourthItemY, 2);
+  determinedLook = new ShopItem("Determined", determinedFaceImg, '"Determined as \never!"', 50, firstItemY, 2, "other");
+  droopyEyes = new ShopItem("Droopy", droopyFaceImg, '"Is it nap time \nyet?"', 50, secondItemY, 2, "other");
+  excitedFace = new ShopItem("Excited", excitedFaceImg, '"WOW! So excited!"', 50, thirdItemY, 2, "other");
+  headBow = new ShopItem("Blue Bow", headBowImg, '"Blue like the sky! \nWill carrots fall \nfrom here too?"', 80, fourthItemY, 2, "hat");
 
+  //don't make more copies of these objects when setup is called again
   initialCreation = false;
 
 }
 
 //INTERACTIVE CONTROLS
 function mousePressed() {
+  //get past the main menu
   if (gameState === "start") {
     if (mouseX > startButtonX && mouseX < startButtonX + startButtonWidth && mouseY > startButtonY && mouseY < startButtonY + startButtonHeight) {
       gameState = "lobby";
@@ -882,63 +1017,73 @@ function mousePressed() {
   }
   //icons in the lobby
   else if (gameState === "lobby") {
-    //tic tac toe
+    //into tic tac toe
     if (mouseX > ticTacToeIconX && mouseX < ticTacToeIconX + ticTacToeIconWidth && mouseY > ticTacToeIconY && mouseY < ticTacToeIconY + ticTacToeIconHeight) {
       gameState = "startTicTacToe";
     }
-    //carrot game
+    //into carrot game
     if (mouseX > carrotGameIconX && mouseX < carrotGameIconX + carrotGameIconWidth && mouseY > carrotGameIconY && mouseY < carrotGameIconY + carrotGameIconHeight) {
       gameState = "carrot game";
     }
-    //shop
+    //into shop
     if (mouseX > shopIconX && mouseX < shopIconX + shopIconWidth && mouseY > shopIconY && mouseY < shopIconY + shopIconHeight) {
       gameState = "shop";
     }
-    //closet
+    //into closet
     if (mouseX > closetX && mouseX < closetX + closetIconSize && mouseY > closetY && mouseY < closetY + closetIconSize) {
       gameState = "customize";
+
+      //change player + arrow values to show it differently in closet
+      playerX -= 175;
+      arrowY = height * 0.89;
+      leftArrowX = width * 0.54;
+      rightArrowX = width * 0.9;
     }
   }
 
-  //closet
+  //inside closet
   else if (gameState === "customize") {
     checkBackButton();
+    
+    //clicked to wear
+    for (let object of playerList) {
+      object.wardrobeClick();
+    }
+
+    checkArrowKeys();
   }
 
-  //shop
+  //inside shop
   else if (gameState === "shop") {
     checkBackButton();
+
     //purchase action
     for (let item of shopList) {
       item.buy();
     }
 
-    //arrow keys for shop menu
-    if (mouseX > rightArrowX && mouseX < rightArrowX + arrowSize && mouseY > arrowY && mouseY < arrowY + arrowSize) {
-      menuPage++;
-    }
-    else if (menuPage > 1 && mouseX > leftArrowX && mouseX < leftArrowX + arrowSize && mouseY > arrowY && mouseY < arrowY + arrowSize) {
-      menuPage--;
-    }
+    checkArrowKeys();
   }
 
-  //carrot game
+  //inside carrot game
   else if (gameState === "carrot game") {
     checkBackButton();
   }
 
-  //tic tac toe start menu
+  //inside tic tac toe start menu
   else if (gameState === "startTicTacToe") {
     checkBackButton();
     //pvp button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvpButtonY && mouseY < pvpButtonY + optionButtonHeight) {
       gameState = "pvp";
       yourTurn = true;
+      previousGameMode = "pvp";
     }
     //player vs computer button
     if (mouseX > optionButtonX && mouseX < optionButtonX + optionButtonWidth && mouseY > pvcompButtonY && mouseY < pvcompButtonY + optionButtonHeight) {
       gameState = "comp";
       yourTurn = true;
+      previousGameMode = "comp";
     }
   }
   
@@ -950,18 +1095,18 @@ function mousePressed() {
     checkBackButton();
   }
 
-  //placing tokens
+  //placing tokens in tic tac toe
   else if (gameState === "pvp" || gameState === "comp" && noBlanks() === false) {
 
     let x = Math.floor(mouseX / cellSize);
     let y = Math.floor(mouseY / cellSize);
   
-    if (yourTurn && grid[y][x] === 0) { //o
+    if (yourTurn && grid[y][x] === 0) { //your turn
       grid[y][x] = 2;
       lastSwitchTime = millis();
     }
 
-    if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) {
+    if (gameState === "pvp" && !yourTurn && grid[y][x] === 0) { //pvp (other player turn)
       grid[y][x] = 1;
     }
 
@@ -1010,51 +1155,40 @@ function carrotGame() {
   displayLossScreen();
 }
 
-function lobby() {
-  displayLobby();
-  displayPlayer();
-}
-
 function shop() {
   displayShop();
   displayWallet();
   displayShopMessages();
 
   displayItems();
-  displayArrowKeys();
 }
 
 function closet() {
   displayClosetBg();
+  displayWardrobeTab();
+
+  displayPlayer();
+
+  displayWardrobeItems();
+
+  //works for both shop and closet
+  displayArrowKeys();
 }
 
 //SETUP
 function setup() {
   
+  //give points (money) whenever a mini-game ends
   givePoint();
   wallet += points;
 
-  //makes sure canvas is square no matter the window's dimensions
+  //pre-selected canvas size
   createCanvas(657, 657);
   
   grid = createEmptyBoard();
   
   //setting up values
-  rows = grid.length;
-  cols = grid[0].length;
-  cellSize = width / cols;
-  
-  optionButtonWidth = bunVsComp.width * 0.4;
-  optionButtonHeight = bunVsComp.height * 0.4;
-  optionButtonX = width *0.7;
-  pvpButtonY = height * 0.7;
-  pvcompButtonY = height * 0.5;
-  
-  playButtonWidth = playAgainButton.width * 0.5;
-  playButtonHeight = playAgainButton.height * 0.5;
-  playButtonX = width/2 - playButtonWidth/2;
-  playButtonY = height * 0.7;
-
+  //(other)
   startButtonWidth = startButtonImg.width * 0.35;
   startButtonHeight = startButtonImg.height * 0.35;
   startButtonX = width/2 - startButtonWidth/2;
@@ -1065,6 +1199,7 @@ function setup() {
   backButtonImgX = width * 0.05;
   backButtonImgY = height * 0.9;
 
+  //(icons in lobby)
   ticTacToeIconWidth = ticTacToeIcon.width * 0.3;
   ticTacToeIconHeight = ticTacToeIcon.height *0.3;
   ticTacToeIconX = width * 0.85;
@@ -1083,13 +1218,35 @@ function setup() {
   closetX = width * 0.15;
   closetY = height * 0.77;
   closetIconSize = 90;
+  
+  //(tic tac toe)
+  rows = grid.length;
+  cols = grid[0].length;
+  cellSize = width / cols;
+  
+  optionButtonWidth = bunVsComp.width * 0.4;
+  optionButtonHeight = bunVsComp.height * 0.4;
+  optionButtonX = width *0.7;
+  pvpButtonY = height * 0.7;
+  pvcompButtonY = height * 0.5;
+  
+  playButtonWidth = playAgainButton.width * 0.5;
+  playButtonHeight = playAgainButton.height * 0.5;
+  playButtonX = width/2 - playButtonWidth/2;
+  playButtonY = height * 0.7;
+
+  //(wardrobe + player character)
+  tabX = width * 0.5;
+  tabY = height * 0.1;
+  tabWidth = otherTabImg.width * 1.2;
+  tabHeight = otherTabImg.height * 1.2;
 
   playerWidth = playerImg.width * 0.8;
   playerHeight = playerImg.height * 0.8;
   playerX = width/2 - playerWidth/2;
   playerY = height * 0.25;
 
-  //shop
+  //(shop)
   shopMenuWidth = shopMenuImg.width * 1.3;
   shopMenuHeight = shopMenuImg.height * 1.3;
   shopMenuX = width * 0.6;
@@ -1104,27 +1261,15 @@ function setup() {
   arrowSize = 30;
   leftArrowX = width * 0.625;
   rightArrowX = width * 0.93;
-  
-  //only make these once
-  if (initialCreation) {
-    createShopObjects();
-    bgMusic.setVolume(0.5); //made the song quieter since it was pretty loud
-    bgMusic.loop();
-    timer = new Timer();
-  }
 
-  //put into a list so i can use for loops to run display() and buy() on each item efficiently
-  shopList = [royalOutfit, hoodie, carrotDoll, eyeMask, scarf, determinedLook, droopyEyes, excitedFace, headBow];
+  //y values of shop items in the menu
+  firstItemY = 50;
+  secondItemY = 160;
+  thirdItemY = 270;
+  fourthItemY = 380;
+  fifthItemY = 490;
   
-  menuPage = 1;
-  
-  //tic tac toe
-  victoryScreen = false;
-  yourTurn = true;
-  
-  blanks = 9;
-  
-  //carrot game
+  //(carrot game)
   basketWidth = basketImg.width * 0.3;
   basketHeight = basketImg.height * 0.3;
   
@@ -1139,9 +1284,30 @@ function setup() {
   points = 0;
   health = 3;
 
-  carrotGamePlaying = false;
+  //only make these once
+  if (initialCreation) {
+    createShopObjects();
 
+    bgMusic.setVolume(0.5);
+    bgMusic.loop();
+
+    timer = new Timer();
+  }
+
+  //put into a list so i can use for loops to run display() and buy() on each item efficiently
+  shopList = [royalOutfit, hoodie, carrotDoll, eyeMask, scarf, determinedLook, droopyEyes, excitedFace, headBow];
+  
+  menuPage = 1; //always start on the first page on menus
+  
+  //tic tac toe states
+  victoryScreen = false;
+  yourTurn = true;
+  
+  blanks = 9;
   previousVictory = "blank";
+  
+  //carrot game states
+  carrotGamePlaying = false;
   carrots = [];
 }
 
@@ -1159,11 +1325,11 @@ function draw() {
   //carrot game
   carrotGame();
   
-  //lobby
-  lobby();
-
   //shop
   shop();
+  
+  //lobby
+  displayLobby();
 
   //closet
   closet();
