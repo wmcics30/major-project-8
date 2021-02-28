@@ -287,7 +287,7 @@ class ShopItem {
 
             //calculate the page it needs to be in (in the wardrobe menu)
             if (playerList.length > 4) {
-              this.wardrobePage = Math.floor((playerList.length + 4)/4);
+              this.wardrobePage = Math.floor((playerList.length + 3)/4);
             }
 
             //determine the y value in the wardrobe menu
@@ -347,11 +347,11 @@ class ShopItem {
 
 //function to help find y position of wardrobe items
 function findPosition(number) {
-  if (number >= 4) {
-    number -= 4;
-  }
-  else {
+  if (number < 4) {
     return number;
+  }
+  while (number >= 4) {
+    number -= 4;
   }
   return number;
 }
